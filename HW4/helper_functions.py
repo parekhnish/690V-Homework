@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+from sklearn.tree import DecisionTreeClassifier
 
 def makeBoolColumn(all_data,col_name_list,symb):
     
@@ -36,7 +36,7 @@ def makeTypeColumn(all_data,col_name_list,symb,is_zero_inc):
 
 
 
-def makeDataDictForScatter(params_dict,visible_labels,all_data,color_dict,label_dict):
+def makeDataDictForCatCat(params_dict,visible_labels,all_data,color_dict,label_dict):
 
     num_rows = len(list(all_data.index))
 
@@ -94,6 +94,84 @@ def makeDataDictForScatter(params_dict,visible_labels,all_data,color_dict,label_
 
 
 
+def makeDataDictForBackgroundCatCat(params_dict,tree,all_data,color_dict,label_dict):
+
+    num_rows = len(list(all_data.index))
+
+    x_name = params_dict['x_name']
+    y_name = params_dict['y_name']
+
+    num_x_values = len(label_dict[x_name].keys())
+    num_y_values = len(label_dict[y_name].keys())
+
+    x_coords = np.linspace(0,num_x_values,num=num_x_values*50)
+    y_coords = np.linspace(0,num_y_values,num=num_y_values*50)
+
+    num_x_coords = x_coords.shape[0]
+    num_y_coords = y_coords.shape[0]
+
+    x_coords = np.tile(x_coords[...,None] , (1,num_y_coords))
+    y_coords = np.tile(y_coords[None,...] , (num_x_coords,1))
+
+    x_coords = x_coords.flatten()
+    y_coords = y_coords.flatten()
+
+    features = np.stack([x_coords,y_coords],axis=1)
+    labels = tree.predict(features)
+
+    ret_dict = {}
+    ret_dict['x_data'] = x_coords
+    ret_dict['y_data'] = y_coords
+    ret_dict['color_data'] = [color_dict[i] for i in list(labels)]
+
+    return ret_dict
+
+
+
+
+def makeTreeForCatCat(params_dict,all_data,label_dict):
+
+    num_rows = len(list(all_data.index))
+
+    x_name = params_dict['x_name']
+    y_name = params_dict['y_name']
+    target_name = params_dict['target_name']
+
+    num_x_values = len(label_dict[x_name].keys())
+    num_y_values = len(label_dict[y_name].keys())
+    num_target_values = len(label_dict[target_name].keys())
+
+    features = (all_data.loc[:,[x_name,y_name]]).values
+    features = np.concatenate((features + 0.8 , features + 0.2),axis=0)
+    labels = (all_data.loc[:,target_name]).values
+    labels = np.concatenate((labels,labels),axis=0)
+
+    tree = DecisionTreeClassifier().fit(features,labels)
+
+    return tree
+
+
+def checkTree(params_dict,tree,all_data,label_dict):
+
+    num_rows = len(list(all_data.index))
+
+    x_name = params_dict['x_name']
+    y_name = params_dict['y_name']
+    target_name = params_dict['target_name']
+
+    num_x_values = len(label_dict[x_name].keys())
+    num_y_values = len(label_dict[y_name].keys())
+    num_target_values = len(label_dict[target_name].keys())
+
+    features = (all_data.loc[:,[x_name,y_name]]).values
+    correct_labels = (all_data.loc[:,target_name]).values
+
+    pred_labels = tree.predict(features)
+    print(np.stack([correct_labels,pred_labels] , axis=1))
+
+
+
+
 # def cat_cat_ticker_func(label_dict):
 #     if(((int(tick) - tick) == 0) and int(tick) < len(label_dict.keys())):
 #         return str(label_dict[tick])
@@ -143,23 +221,4 @@ def makeDataDictForScatter(params_dict,visible_labels,all_data,color_dict,label_
 #     else:
 #         return ""
 
-
-cat_cat_col_name_dict = {
-                            '(Boolean) Disease': 'bool_disease',
-                            '(Boolean) Cancer': 'bool_cancer',
-                            '(Boolean) Diabetes': 'bool_diabetes',
-                            '(Boolean) Heart Disease': 'bool_heart_disease',
-                            '(Boolean) Currently Smoking': 'bool_smoking',
-                            '(Boolean) Historical Smoking': 'bool_hist_smoked',
-                            '(Boolean) Pets': 'bool_pet',
-                            '(Boolean) Belly': 'bool_belly',
-                            '(Boolean) Rash': 'bool_rash',
-                            '(Type of) Smoking': 'type_smoking',
-                            '(Type of) Handedness': 'type_hand',
-                            '(Type of) Pisa Best Score': 'type_pisa',
-                            '(Type of) Cable Favoritism': 'type_cable',
-                            '(Type of) Crash': 'type_crash',
-                            '(Type of) Pet': 'type_pet',
-                            '(Type of) Race': 'type_race'
-                            
-}
+# BOOL-Pet , BOOL-Historical Smoking , BOOL-Diabetes
