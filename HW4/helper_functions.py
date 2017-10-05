@@ -61,7 +61,7 @@ def makeDataDictForCatCat(params_dict,visible_labels,all_data,color_dict,label_d
 
     for i in range(num_target_values):
         if(target_total[i] > 0):
-            count_mat[:,:,i] = count_mat[:,:,i] / target_total[i]
+            count_mat[:,:,i] = count_mat[:,:,i] / num_rows
 
     x_val_mat =         np.tile(np.arange(num_x_values)[...,None,None],(1,num_y_values,num_target_values))
     y_val_mat =         np.tile(np.arange(num_y_values)[None,...,None],(num_x_values,1,num_target_values))
@@ -81,10 +81,10 @@ def makeDataDictForCatCat(params_dict,visible_labels,all_data,color_dict,label_d
 
     ret_dict = {}
 
-    # ret_dict['x_data'] = x_data[is_not_zero]
-    # ret_dict['y_data'] = y_data[is_not_zero]
-    ret_dict['x_data'] = [label_dict[x_name][i] for i in list(x_data)]
-    ret_dict['y_data'] = [label_dict[y_name][i] for i in list(y_data)]
+    # ret_dict['x_data'] = [label_dict[x_name][i] for i in list(x_data)]
+    # ret_dict['y_data'] = [label_dict[y_name][i] for i in list(y_data)]
+    ret_dict['x_data'] = [i+0.5 for i in list(x_data)]
+    ret_dict['y_data'] = [i+0.5 for i in list(y_data)]
     ret_dict['target_data'] = target_data
     ret_dict['radius_data'] = radius_data
     ret_dict['legend_data'] = [label_dict[target_name][i] for i in list(ret_dict['target_data'])]
@@ -129,6 +129,52 @@ def makeDataDictForBackgroundCatCat(params_dict,tree,all_data,color_dict,label_d
 
 
 
+def makeDataDictForPrecRec(params_dict,tree,curr_id,all_data,color_dict,label_dict):
+
+    curr_id = int(curr_id)
+    num_rows = len(list(all_data.index))
+
+    target_name = params_dict['target_name']
+
+    corr_labels = all_data.loc[:,target_name]
+    pred_labels = getPredLabels(params_dict,tree,all_data,label_dict)
+
+    size_data = np.empty((4), dtype=np.float64)
+
+    is_corr = (corr_labels == curr_id)
+    is_not_corr = np.invert(is_corr)
+    is_pred = (pred_labels == curr_id)
+    is_not_pred = np.invert(is_pred)
+
+    size_data[0] = np.sum(np.logical_and(is_pred,is_corr))
+    size_data[1] = np.sum(np.logical_and(is_pred,is_not_corr))
+    size_data[2] = np.sum(np.logical_and(is_not_pred,is_corr))
+    size_data[3] = np.sum(np.logical_and(is_not_pred,is_not_corr))
+
+    size_data = size_data / float(num_rows)
+
+    # x_data = ['T-Act','F-Act','T-Act','F-Act']
+    x_data = [0.5,1.5,0.5,1.5]
+    # y_data = ['T-Pred','T-Pred','F-Pred','F-Pred']
+    y_data = [1.5,1.5,0.5,0.5]
+    color_data = [color_dict[2] , color_dict[3] , color_dict[3] , color_dict[2]]
+
+    ret_dict = {}
+    ret_dict['t_data'] = y_data + size_data/2.0
+    ret_dict['b_data'] = y_data - size_data/2.0
+    ret_dict['l_data'] = x_data - size_data/2.0
+    ret_dict['r_data'] = x_data + size_data/2.0
+    ret_dict['color_data'] = color_data
+
+    # print("CURR ID: " + str(curr_id))
+    # print(np.stack((corr_labels,pred_labels),axis=1))
+    # print("===========================")
+    # print("===========================")
+
+    return ret_dict
+
+
+
 def makeTreeForCatCat(params_dict,all_data,label_dict):
 
     num_rows = len(list(all_data.index))
@@ -146,12 +192,14 @@ def makeTreeForCatCat(params_dict,all_data,label_dict):
     labels = (all_data.loc[:,target_name]).values
     labels = np.concatenate((labels,labels),axis=0)
 
-    tree = DecisionTreeClassifier().fit(features,labels)
+    tree = DecisionTreeClassifier(max_depth=3).fit(features,labels)
+    # print(np.stack((labels,tree.predict(features)),axis=1))
+    # print("===========================")
 
     return tree
 
 
-def checkTree(params_dict,tree,all_data,label_dict):
+def getPredLabels(params_dict,tree,all_data,label_dict):
 
     num_rows = len(list(all_data.index))
 
@@ -163,62 +211,15 @@ def checkTree(params_dict,tree,all_data,label_dict):
     num_y_values = len(label_dict[y_name].keys())
     num_target_values = len(label_dict[target_name].keys())
 
-    features = (all_data.loc[:,[x_name,y_name]]).values
-    correct_labels = (all_data.loc[:,target_name]).values
+    features = (all_data.loc[:,[x_name,y_name]]).values + 0.5
 
     pred_labels = tree.predict(features)
-    print(np.stack([correct_labels,pred_labels] , axis=1))
-
-
-
-
-# def cat_cat_ticker_func(label_dict):
-#     if(((int(tick) - tick) == 0) and int(tick) < len(label_dict.keys())):
-#         return str(label_dict[tick])
-#     else
-#         return ""
-
-
-
-
-# cat_cat_data_dict = makeDataDictForScatter(cat_cat_params_dict , all_data , color_dict, label_dict)
-# cat_cat_CDS = ColumnDataSource(data=cat_cat_data_dict)
-
-# cat_cat_figure = figure(title="Category-Category Scatter Plot",
-#                         plot_width=500,plot_height=550,
-#                         x_range=[0,len(label_dict[cat_cat_dict['x_name']].keys())],
-#                         y_range=[0,len(label_dict[cat_cat_dict['y_name']].keys())])
-
-# cat_cat_figure.circle(x='x_data' , y='y_data' ,
-#                       fill_colors='color_data' , line_colors='color_data' , fill_alpha=0.8 ,
-#                       size='radius_data' , legend='legend_data' ,
-#                       source=cat_cat_CDS)
-
-# show(cat_cat_figure, notebook_handle=True)
-
-
-# cat_cat_params_dict = {
-#                     x_name: 'type_smoking',
-#                     y_name: 'bool_pet',
-#                     target_name: 'type_pisa'
-#                     radius_scale: 100
-# }
-
-
-# def cat_cat_x_ticker_func():
-#     d = label_dict[cat_cat_params_dict['x_name']]
     
-#     if(((int(tick) - tick) == 0) and int(tick) < len(d.keys())):
-#         return str(d[tick])
-#     else:
-#         return ""
-    
-# def cat_cat_y_ticker_func():
-#     d = label_dict[cat_cat_params_dict['y_name']]
-    
-#     if(((int(tick) - tick) == 0) and int(tick) < len(d.keys())):
-#         return str(d[tick])
-#     else:
-#         return ""
+    return pred_labels
+
+
+
+
 
 # BOOL-Pet , BOOL-Historical Smoking , BOOL-Diabetes
+# TYPE-Hand , BOOL-Diabetes , BOOL-Rash
