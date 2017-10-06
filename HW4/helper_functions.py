@@ -1,7 +1,18 @@
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ------------ VARIOUS FUNCTION TO HELP CREATE AND MODIFY DATA-----------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+
+# IMPORT ALL LIBRARIES
 import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
 
+
+# FUNCTION TO MAKE A BOOLEAN (BINARY VALUES ONLY) COLUMN FROM THE GIVEN INPUT COLUMNS
 def makeBoolColumn(all_data,col_name_list,symb):
     
     num_rows = len(list(all_data.index))
@@ -16,6 +27,7 @@ def makeBoolColumn(all_data,col_name_list,symb):
     return new_col
 
 
+# FUNCTION TO MAKE A TYPE (MULTIPLE VALUES) COLUMN FROM THE GIVEN INPUT COLUMNS
 def makeTypeColumn(all_data,col_name_list,symb,is_zero_inc):
     
     num_rows = len(list(all_data.index))
@@ -36,6 +48,14 @@ def makeTypeColumn(all_data,col_name_list,symb,is_zero_inc):
 
 
 
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ------------ FUNCTIONS FOR PLOT #1 ------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+
+# FUNCTION TO MAKE ACTUAL DATA FOR THE PLOT
 def makeDataDictForCatCat(params_dict,visible_labels,all_data,color_dict,label_dict):
 
     num_rows = len(list(all_data.index))
@@ -81,8 +101,6 @@ def makeDataDictForCatCat(params_dict,visible_labels,all_data,color_dict,label_d
 
     ret_dict = {}
 
-    # ret_dict['x_data'] = [label_dict[x_name][i] for i in list(x_data)]
-    # ret_dict['y_data'] = [label_dict[y_name][i] for i in list(y_data)]
     ret_dict['x_data'] = [i+0.5 for i in list(x_data)]
     ret_dict['y_data'] = [i+0.5 for i in list(y_data)]
     ret_dict['target_data'] = target_data
@@ -94,6 +112,7 @@ def makeDataDictForCatCat(params_dict,visible_labels,all_data,color_dict,label_d
 
 
 
+# FUNCTION TO MAKE BACKGROUND DATA FOR THE PLOT
 def makeDataDictForBackgroundCatCat(params_dict,tree,all_data,color_dict,label_dict):
 
     num_rows = len(list(all_data.index))
@@ -128,7 +147,7 @@ def makeDataDictForBackgroundCatCat(params_dict,tree,all_data,color_dict,label_d
 
 
 
-
+# FUNCTION TO MAKE DATA FOR THE PRECISION-RECALL PLOT
 def makeDataDictForCatCatPrecRec(params_dict,tree,curr_id,all_data,color_dict,label_dict):
 
     curr_id = int(curr_id)
@@ -153,9 +172,7 @@ def makeDataDictForCatCatPrecRec(params_dict,tree,curr_id,all_data,color_dict,la
 
     size_data = size_data / float(num_rows)
 
-    # x_data = ['T-Act','F-Act','T-Act','F-Act']
     x_data = [0.5,1.5,0.5,1.5]
-    # y_data = ['T-Pred','T-Pred','F-Pred','F-Pred']
     y_data = [1.5,1.5,0.5,0.5]
     color_data = [color_dict[2] , color_dict[3] , color_dict[3] , color_dict[2]]
 
@@ -166,15 +183,11 @@ def makeDataDictForCatCatPrecRec(params_dict,tree,curr_id,all_data,color_dict,la
     ret_dict['r_data'] = x_data + size_data/2.0
     ret_dict['color_data'] = color_data
 
-    # print("CURR ID: " + str(curr_id))
-    # print(np.stack((corr_labels,pred_labels),axis=1))
-    # print("===========================")
-    # print("===========================")
-
     return ret_dict
 
 
 
+# FUNCTION TO MAKE THE DECISION TREE FOR THE PLOT
 def makeTreeForCatCat(params_dict,all_data,label_dict):
 
     num_rows = len(list(all_data.index))
@@ -193,12 +206,11 @@ def makeTreeForCatCat(params_dict,all_data,label_dict):
     labels = np.concatenate((labels,labels),axis=0)
 
     tree = DecisionTreeClassifier(max_depth=3).fit(features,labels)
-    # print(np.stack((labels,tree.predict(features)),axis=1))
-    # print("===========================")
 
     return tree
 
 
+# FUNCTION TO RETRIVE THE LABELS GIVEN TO THE ACTUAL DATA BY THE DECISION TREE
 def getPredLabelsForCatCat(params_dict,tree,all_data,label_dict):
 
     num_rows = len(list(all_data.index))
@@ -223,11 +235,13 @@ def getPredLabelsForCatCat(params_dict,tree,all_data,label_dict):
 
 # BOOL-Pet , BOOL-Historical Smoking , BOOL-Diabetes
 # TYPE-Hand , BOOL-Diabetes , BOOL-Rash
-# --------------------------------
-# --------------------------------
-# --------------------------------
-# --------------------------------
-# --------------------------------
+
+
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# ------------ FUNCTIONS FOR PLOT #2 ------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def makeDataDictForVegMeat(params_dict,visible_labels,all_data,color_dict,label_dict):
 
@@ -327,9 +341,7 @@ def makeDataDictForVegMeatPrecRec(params_dict,tree,curr_id,all_data,color_dict):
 
     size_data = size_data / float(num_rows)
 
-    # x_data = ['T-Act','F-Act','T-Act','F-Act']
     x_data = [0.5,1.5,0.5,1.5]
-    # y_data = ['T-Pred','T-Pred','F-Pred','F-Pred']
     y_data = [1.5,1.5,0.5,0.5]
     color_data = [color_dict[2] , color_dict[3] , color_dict[3] , color_dict[2]]
 
@@ -339,11 +351,6 @@ def makeDataDictForVegMeatPrecRec(params_dict,tree,curr_id,all_data,color_dict):
     ret_dict['l_data'] = x_data - size_data/2.0
     ret_dict['r_data'] = x_data + size_data/2.0
     ret_dict['color_data'] = color_data
-
-    # print("CURR ID: " + str(curr_id))
-    # print(np.stack((corr_labels,pred_labels),axis=1))
-    # print("===========================")
-    # print("===========================")
 
     return ret_dict
 
@@ -356,11 +363,12 @@ def makeTreeForVegMeat(params_dict,all_data):
     x_name = params_dict['x_name']+"_TOTAL"
     y_name = params_dict['y_name']+"_TOTAL"
     target_name = params_dict['target_name']
+    tree_depth = params_dict['tree_depth']
 
     features = (all_data.loc[:,[x_name,y_name]]).values
     labels = (all_data.loc[:,target_name]).values
 
-    tree = DecisionTreeClassifier(max_depth=3).fit(features,labels)
+    tree = DecisionTreeClassifier(max_depth=tree_depth).fit(features,labels)
 
     return tree
 
